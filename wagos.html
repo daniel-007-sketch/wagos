@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Player Sign-Up & Random Team Assignment</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
+
+  <div id="signupPage" class="bg-white shadow-lg rounded-2xl p-6 w-full max-w-md text-center">
+    <h1 class="text-3xl font-bold mb-4 text-red-700">Player Sign-Up</h1>
+    <p id="signupCount" class="mb-4 text-lg font-semibold">0 / 50 players signed up</p>
+    <input type="text" id="playerName" class="w-full p-3 border rounded-md mb-4" placeholder="Enter Your Name" maxlength="20">
+    <button id="signupBtn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 mb-4">Sign Up</button>
+    <p id="signupMsg" class="text-red-600 font-semibold mb-4"></p>
+
+    <p id="immediateTeamMsg" class="text-green-600 font-bold mb-4"></p>
+    
+    <p id="resetTimer" class="text-gray-500 font-medium mb-4"></p>
+
+    <div id="checkTeamSection">
+      <input type="text" id="checkName" class="w-full p-3 border rounded-md mb-2" placeholder="Enter your name to check team">
+      <button id="checkTeamBtn" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 mb-4">Check My Team</button>
+      <p id="checkMsg" class="text-red-600 font-semibold"></p>
+    </div>
+  </div>
+
+  <div id="teamPage" class="hidden bg-white shadow-lg rounded-2xl p-6 w-full max-w-lg text-center">
+    <h2 id="teamMessage" class="text-xl font-semibold mb-4 text-blue-700"></h2>
+    <h2 id="teamTitle" class="text-3xl font-bold mb-4 text-green-600"></h2>
+    <ul id="teamMembers" class="list-disc list-inside space-y-2 mb-4 text-left"></ul>
+    <button id="backBtn" class="w-full bg-gray-600 text-white font-bold py-2 px-4 rounded-md hover:bg-gray-700">Back</button>
+  </div>
+
+  <script>
+    const maxPlayers = 50;
+    const requiredPlayers = 50;
+    const teams = ["Team A", "Team B", "Team C"];
+
+    const playerNames = [];
+    const teamAssignments = {};
+    const teamMembers = { "Team A": [], "Team B": [], "Team C": [] };
+    const priorityPlayersAssigned = { "Team A": [], "Team B": [], "Team C": [] };
+
+    // New list of high-skill, high-availability players
+    const highPriorityPlayers = [
+      "Washington", "Musana", "Beckham", "Thr’on", "Franco", "Edwin", "Martin",
+      "Vevo", "Kyrie", "Assimwe", "Kimera", "Bakas", "Shawn", "Wadulo", "Konusu",
+      "Rasta", "Lawrence", "Allan", "Felix", "Hashil", "Ssemwos", "Kagya", "Tovic"
+    ].map(name => name.toLowerCase());
+
+    const signupPage = document.getElementById("signupPage");
+    const signupCount = document.getElementById("signupCount");
+    const playerInput = document.getElementById("playerName");
+    const signupBtn = document.getElementById("signupBtn");
+    const signupMsg = document.getElementById("signupMsg");
+    const immediateTeamMsg = document.getElementById("immediateTeamMsg");
+    const resetTimer = document.getElementById("resetTimer");
+
+    const checkNameInput = document.getElementById("checkName");
+    const checkTeamBtn = document.getElementById("checkTeamBtn");
+    const checkMsg = document.getElementById("checkMsg");
+
+    const teamPage = document.getElementById("teamPage");
+    const teamMessage = document.getElementById("teamMessage");
+    const teamTitle = document.getElementById("teamTitle");
+    const teamMembersList = document.getElementById("teamMembers");
+    const backBtn = document.getElementById("backBtn");
+
+    // Function to calculate and update the reset timer
+    function updateResetTimer() {
+      const now = new Date();
+      const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 4 = Thursday
+      const daysUntilThursday = (4 - dayOfWeek + 7) % 7;
+      
+      const nextReset = new Date(now);
+      nextReset.setDate(now.getDate() + daysUntilThursday);
+      nextReset.setHours(0, 0, 0, 0);
+
+      const timeUntilReset = nextReset.getTime() - now.getTime();
+      const seconds = Math.floor(timeUntilReset / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+
+      const remainingHours = hours % 24;
+      const remainingMinutes = minutes % 60;
+      const remainingSeconds = seconds % 60;
+
+      if (timeUntilReset < 0) {
+        resetTimer.textContent = "System resetting now...";
+      } else {
+        resetTimer.textContent = `System resets in: ${days} days, ${remainingHours} hours, ${remainingMinutes} minutes, ${remainingSeconds} seconds`;
+      }
+    }
+
+    // Update the timer every second
+    setInterval(updateResetTimer, 1000);
+    // Initial call to display the timer immediately
+    updateResetTimer();
+
+    // Sign-Up Button
+    signupBtn.addEventListener("click", () => {
+      const name = playerInput.value.trim();
+      signupMsg.textContent = "";
+      checkMsg.textContent = "";
+      immediateTeamMsg.textContent = "";
+
+      if (!name) {
+        signupMsg.textContent = "Please enter your name!";
+        return;
+      }
+
+      const playerKey = name.toLowerCase();
+
+      if (playerNames.includes(name)) {
+        signupMsg.textContent = "This name has already signed up!";
+        return;
+      }
+
+      if (playerNames.length >= maxPlayers) {
+        signupMsg.textContent = "Maximum player limit reached!";
+        return;
+      }
+
+      playerNames.push(name);
+      signupCount.textContent = `${playerNames.length} / ${requiredPlayers} players signed up`;
+      playerInput.value = "";
+      
+      let team;
+
+      // Check if the player is a high-priority player
+      if (highPriorityPlayers.includes(playerKey)) {
+        // Find the team with the fewest priority players
+        let smallestPriorityTeam = teams[0];
+        let minPriorityPlayers = priorityPlayersAssigned[smallestPriorityTeam].length;
+
+        teams.forEach(t => {
+          if (priorityPlayersAssigned[t].length < minPriorityPlayers) {
+            minPriorityPlayers = priorityPlayersAssigned[t].length;
+            smallestPriorityTeam = t;
+          }
+        });
+        team = smallestPriorityTeam;
+        priorityPlayersAssigned[team].push(name);
+      } else {
+        // For non-priority players, find the team with the fewest total members
+        let smallestTeam = teams[0];
+        let minPlayers = teamMembers[smallestTeam].length;
+        
+        teams.forEach(t => {
+          if (teamMembers[t].length < minPlayers) {
+            minPlayers = teamMembers[t].length;
+            smallestTeam = t;
+          }
+        });
+        team = smallestTeam;
+      }
+      
+      teamAssignments[playerKey] = team;
+      teamMembers[team].push(name);
+
+      // Show immediate team assignment message (only name + team, no teammates yet)
+      immediateTeamMsg.textContent = `${name}, you have been assigned to ${team}`;
+    });
+
+    // Check Team Button
+    checkTeamBtn.addEventListener("click", () => {
+      checkMsg.textContent = "";
+
+      const name = checkNameInput.value.trim();
+      const playerKey = name.toLowerCase();
+
+      if (!teamAssignments[playerKey]) {
+        checkMsg.textContent = "Name not found or not signed up yet!";
+        return;
+      }
+
+      const team = teamAssignments[playerKey];
+
+      // Show message with name + team
+      teamMessage.textContent = `${name}, you have been assigned to ${team}`;
+
+      // Show teammates list
+      teamTitle.textContent = `${team} Members`;
+      teamMembersList.innerHTML = "";
+      teamMembers[team].forEach(member => {
+        const li = document.createElement("li");
+        li.textContent = member;
+        if (member.toLowerCase() === playerKey) {
+          li.classList.add("font-bold", "text-blue-600");
+        }
+        teamMembersList.appendChild(li);
+      });
+
+      signupPage.classList.add("hidden");
+      teamPage.classList.remove("hidden");
+    });
+
+    // Back Button
+    backBtn.addEventListener("click", () => {
+      signupPage.classList.remove("hidden");
+      teamPage.classList.add("hidden");
+      checkNameInput.value = "";
+    });
+  </script>
+
+</body>
+</html>
