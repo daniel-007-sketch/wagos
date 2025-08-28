@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wagos League</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="/logo.svg" />
+  <script>
+    const nextResetAtISO = '<%= nextResetAtISO %>';
+    function updateCountdown() {
+      const target = new Date(nextResetAtISO);
+      const now = new Date();
+      const diffMs = target - now;
+      const el = document.getElementById('countdown');
+      if (diffMs <= 0) {
+        el.textContent = 'Reset in: soon';
+        return;
+      }
+      const sec = Math.floor(diffMs / 1000) % 60;
+      const min = Math.floor(diffMs / (1000*60)) % 60;
+      const hr = Math.floor(diffMs / (1000*60*60)) % 24;
+      const days = Math.floor(diffMs / (1000*60*60*24));
+      el.textContent = `Reset in: ${days}d ${hr}h ${min}m ${sec}s`;
+    }
+    setInterval(updateCountdown, 1000);
+    window.addEventListener('DOMContentLoaded', updateCountdown);
+  </script>
+</head>
+<body class="min-h-screen bg-gray-100 text-gray-800">
+  <header class="bg-white shadow">
+    <div class="max-w-4xl mx-auto px-4 py-6 flex items-center gap-4">
+      <img src="/logo.svg" alt="Wagos League" class="w-10 h-10" />
+      <h1 class="text-2xl font-bold"><%= appName %></h1>
+      <div id="countdown" class="ml-auto text-sm text-gray-600"></div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto p-4 grid md:grid-cols-2 gap-6">
+    <section class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-lg font-semibold mb-4">Player Sign Up</h2>
+      <form method="post" action="/signup" class="flex gap-2">
+        <input type="text" name="name" class="flex-1 border rounded px-3 py-2" placeholder="Enter your name" required />
+        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Sign Up</button>
+      </form>
+      <% if (signupResult) { %>
+        <div class="mt-4 p-3 rounded <%= signupResult.already ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200' %>">
+          <% if (signupResult.already) { %>
+            <p class="text-yellow-800">Welcome back, <strong><%= signupResult.name %></strong>. You are already on team <strong><%= signupResult.team %></strong>.</p>
+          <% } else { %>
+            <p class="text-green-800">Thanks for signing up, <strong><%= signupResult.name %></strong>! You have been assigned to team <strong><%= signupResult.team %></strong>.</p>
+          <% } %>
+        </div>
+      <% } %>
+    </section>
+
+    <section class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-lg font-semibold mb-4">View My Team</h2>
+      <form method="post" action="/my-team" class="flex gap-2">
+        <input type="text" name="name" class="flex-1 border rounded px-3 py-2" placeholder="Enter your name" required />
+        <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded">View</button>
+      </form>
+      <% if (teamInfo) { %>
+        <div class="mt-4">
+          <h3 class="font-semibold">You: <%= teamInfo.you %> (Team <%= teamInfo.team %>)</h3>
+          <ul class="mt-2 space-y-1">
+            <% teamInfo.teammates.forEach(function(tm) { %>
+              <li class="flex justify-between border-b py-1">
+                <span><%= tm.name %></span>
+                <span class="text-gray-500">Skill: <%= tm.skill %></span>
+              </li>
+            <% }) %>
+          </ul>
+        </div>
+      <% } %>
+    </section>
+
+    <% if (error) { %>
+      <div class="md:col-span-2 bg-red-50 border border-red-200 text-red-800 rounded p-4">
+        <%= error %>
+      </div>
+    <% } %>
+  </main>
+
+  <footer class="max-w-4xl mx-auto px-4 pb-6 text-sm text-gray-500">
+    <a href="/admin/login" class="underline">Admin</a>
+  </footer>
+</body>
+</html>
+
