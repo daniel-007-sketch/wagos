@@ -334,7 +334,7 @@ app.post('/admin/logout', requireAdmin, (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   // eslint-disable-next-line no-console
   console.log(`Wagos League server running on http://localhost:${PORT}`);
 });
