@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: wagos-league
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_PATH
+        value: /var/data/data.sqlite
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1

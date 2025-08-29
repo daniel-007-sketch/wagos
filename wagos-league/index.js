@@ -7,6 +7,7 @@ import dayjs from 'dayjs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const DATABASE_PATH = process.env.DATABASE_PATH || 'data.sqlite';
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
@@ -23,7 +24,7 @@ app.use(
 );
 
 // Database setup
-const db = new Database('data.sqlite');
+const db = new Database(DATABASE_PATH);
 db.pragma('journal_mode = WAL');
 
 function runMigrations() {
@@ -202,6 +203,9 @@ app.use((req, res, next) => {
   res.locals.isAdmin = Boolean(req.session.user && req.session.user.role === 'admin');
   next();
 });
+
+// Health check for deployment
+app.get('/healthz', (req, res) => res.status(200).send('ok'));
 
 // Routes
 app.get('/', (req, res) => {
